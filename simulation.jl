@@ -8,7 +8,7 @@ using LinearAlgebra # for dot and cross products
 using BenchmarkTools
 using JLD
 
-G = 4.0*pi^2 # time scale = year and length scale = AU
+G = 4.0*pi^2 # time scale = year and length scale = AU and mass scale = solar mass
 
 mutable struct body
    name::String # name of star or planet
@@ -24,12 +24,12 @@ end
 function planet(name="Earth", m=3.0e-6, a=1.0, ϵ=0.017, i=0.0)
    perihelion = (1.0 - ϵ) * a
 	aphelion = (1.0 + ϵ) * a
-	speed = sqrt(G * (1.0 + ϵ)^2 / (a * (1.0 - ϵ^2)))
+	speed = sqrt(G * 0.089 * (1.0 + ϵ)^2 / (a * (1.0 - ϵ^2)))
+   println(speed)
+
    phi = 0.0
 	r = [perihelion * cos(i*pi/180.0) * cos(phi), perihelion * cos(i*pi/180.0) * sin(phi), perihelion * sin(i*pi/180.0)]
 	v = [-speed * sin(phi), speed * cos(phi), 0.0]
-
-   println(r)
    return body(name, m, r, v)
 end
 
@@ -215,19 +215,14 @@ end
 function SolarSystem()
 
    bodies = Vector{body}()
-   push!(bodies, star("TRAPPIST-1", 0.8, zeros(3), zeros(3)))
-   push!(bodies, planet("planet_b", 4.1354313e-5, 0.01154, 0.00622, 90-89.728))
-   push!(bodies, planet("planet_c", 3.9354315e-5, 0.01580, 0.00654, 90-89.778))
-   push!(bodies, planet("planet_d", 1.1666655e-5, 0.02227, 0.00837, 90-89.896))
-   push!(bodies, planet("planet_e", 2.0816796e-5, 0.02925, 0.00510, 90-89.793))
-   push!(bodies, planet("planet_f", 3.1264233e-5, 0.03849, 0.01007, 90-89.740))
-   push!(bodies, planet("planet_g", 3.9753714e-5, 0.04683, 0.00208, 90-89.742))
-   push!(bodies, planet("planet_h", 9.792783e-6, 0.06189, 0.00667, 90-89.805))
-   # push!(bodies, star()) # default = Sun
-   # push!(bodies, planet("Venus", 2.44e-6, 0.72, 0.0068, 3.39))
-   # push!(bodies, planet("Earth", 3.0e-6, 1.0, 0.017, 0.0))
-   # push!(bodies, planet("Jupiter", 0.00095, 5.2, 0.049, 1.3))
-   # push!(bodies, planet("Saturn", 0.000285, 9.58, 0.055, 2.48))
+   push!(bodies, star("TRAPPIST-1", 1*0.089, zeros(3), zeros(3)))
+   push!(bodies, planet("planet_b", 10*4.1354313e-6, 0.01154, 0.00622, 90-89.728))
+   push!(bodies, planet("planet_c", 10*3.9354315e-6, 0.01580, 0.00654, 90-89.778))
+   push!(bodies, planet("planet_d", 10*1.1666655e-6, 0.02227, 0.00837, 90-89.896))
+   push!(bodies, planet("planet_e", 10*2.0816796e-6, 0.02925, 0.00510, 90-89.793))
+   push!(bodies, planet("planet_f", 10*3.1264233e-6, 0.03849, 0.01007, 90-89.740))
+   push!(bodies, planet("planet_g", 10*3.9753714e-6, 0.04683, 0.00208, 90-89.742))
+   push!(bodies, planet("planet_h", 10*9.792783e-7, 0.06189, 0.00667, 90-89.805))
 
    numberOfBodies = size(bodies)[1]
 
@@ -279,25 +274,25 @@ for (index, theta) in enumerate(planet_h_thetas)
 end
 
 # plot(sol.t, planet_h_thetas)
-#save("planet_h_thetas2.jld", "planet_h_thetas2", planet_h_thetas)
+save("planet_h_thetas.jld", "planet_h_thetas", planet_h_thetas)
 # loaded_data = load("planet_h_thetas.jld")
 # loaded_array = loaded_data["planet_h_thetas"]
 # plot(sol.t, loaded_array)
 
 # Plot of orbit
-# xy = plot(
-# [(sol[1, trappist1, :], sol[2, trappist1, :]), 
-#  (sol[1, planet_b, :], sol[2, planet_b, :]), 
-#  (sol[1, planet_c, :], sol[2, planet_c, :]),
-#  (sol[1, planet_d, :], sol[2, planet_d, :]), 
-#  (sol[1, planet_e, :], sol[2, planet_e, :]),
-#  (sol[1, planet_f, :], sol[2, planet_f, :]),
-#  (sol[1, planet_g, :], sol[2, planet_g, :]),
-#  (sol[1, planet_h, :], sol[2, planet_h, :])],
-#  xlabel = "x (AU)", ylabel = "y (AU)", legend = true, title = "TRAPPIST-1 Planetary System", 
-#  label = permutedims([body.name for body in s.bodies]), aspect_ratio=1, linewidth=0.5)
+xy = plot(
+[(sol[1, trappist1, :], sol[2, trappist1, :]), 
+ (sol[1, planet_b, :], sol[2, planet_b, :]), 
+ (sol[1, planet_c, :], sol[2, planet_c, :]),
+ (sol[1, planet_d, :], sol[2, planet_d, :]), 
+ (sol[1, planet_e, :], sol[2, planet_e, :]),
+ (sol[1, planet_f, :], sol[2, planet_f, :]),
+ (sol[1, planet_g, :], sol[2, planet_g, :]),
+ (sol[1, planet_h, :], sol[2, planet_h, :])],
+ xlabel = "x (AU)", ylabel = "y (AU)", legend = true, title = "TRAPPIST-1 Planetary System", 
+ label = permutedims([body.name for body in s.bodies]), aspect_ratio=1, linewidth=0.5)
 
-# plot(xy, xlims=(-0.2, 0.2), ylims=(-0.10, 0.10))
+plot(xy, xlims=(-0.2, 0.2), ylims=(-0.10, 0.10))
 
 # # Plot of obliquity
 # tilt = obliquity(planet_b, sol)
