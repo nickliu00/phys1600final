@@ -8,9 +8,6 @@ using LinearAlgebra # for dot and cross products
 using BenchmarkTools
 using JLD
 
-
-println("Number of threads = ", Threads.nthreads())
-
 G = 4.0*pi^2 # time scale = year and length scale = AU
 
 mutable struct body
@@ -31,6 +28,8 @@ function planet(name="Earth", m=3.0e-6, a=1.0, ϵ=0.017, i=0.0)
    phi = 0.0
 	r = [perihelion * cos(i*pi/180.0) * cos(phi), perihelion * cos(i*pi/180.0) * sin(phi), perihelion * sin(i*pi/180.0)]
 	v = [-speed * sin(phi), speed * cos(phi), 0.0]
+
+   println(r)
    return body(name, m, r, v)
 end
 
@@ -252,7 +251,7 @@ for b in s.bodies
    println("body name = ", b.name)
 end
 
-t_final = 1.0 # final time of simulation
+t_final = 100.0 # final time of simulation
 tspan = (0.0, t_final) # span of time to simulate
 prob = ODEProblem(parallel_tendency!, s.phaseSpace, tspan, s) # specify ODE
 sol = solve(prob, progress=true, maxiters=1e8, reltol=1e-6, abstol=1e-6) # solve using Tsit5 algorithm to specified accuracy
@@ -280,10 +279,10 @@ for (index, theta) in enumerate(planet_h_thetas)
 end
 
 # plot(sol.t, planet_h_thetas)
-# save("planet_h_thetas.jld", "planet_h_thetas", planet_h_thetas)
-loaded_data = load("planet_h_thetas.jld")
-loaded_array = loaded_data["planet_h_thetas"]
-plot(sol.t, loaded_array)
+#save("planet_h_thetas2.jld", "planet_h_thetas2", planet_h_thetas)
+# loaded_data = load("planet_h_thetas.jld")
+# loaded_array = loaded_data["planet_h_thetas"]
+# plot(sol.t, loaded_array)
 
 # Plot of orbit
 # xy = plot(
