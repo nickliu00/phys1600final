@@ -216,13 +216,13 @@ function SolarSystem()
 
    bodies = Vector{body}()
    push!(bodies, star("TRAPPIST-1", 1*0.089, zeros(3), zeros(3)))
-   push!(bodies, planet("planet_b", 10*4.1354313e-6, 0.01154, 0.00622, 90-89.728))
-   push!(bodies, planet("planet_c", 10*3.9354315e-6, 0.01580, 0.00654, 90-89.778))
-   push!(bodies, planet("planet_d", 10*1.1666655e-6, 0.02227, 0.00837, 90-89.896))
-   push!(bodies, planet("planet_e", 10*2.0816796e-6, 0.02925, 0.00510, 90-89.793))
-   push!(bodies, planet("planet_f", 10*3.1264233e-6, 0.03849, 0.01007, 90-89.740))
-   push!(bodies, planet("planet_g", 10*3.9753714e-6, 0.04683, 0.00208, 90-89.742))
-   push!(bodies, planet("planet_h", 10*9.792783e-7, 0.06189, 0.00667, 90-89.805))
+   push!(bodies, planet("planet_b", 5*4.1354313e-6, 0.01154, 0.00622, 90-89.728))
+   push!(bodies, planet("planet_c", 5*3.9354315e-6, 0.01580, 0.00654, 90-89.778))
+   push!(bodies, planet("planet_d", 5*1.1666655e-6, 0.02227, 0.00837, 90-89.896))
+   push!(bodies, planet("planet_e", 5*2.0816796e-6, 0.02925, 0.00510, 90-89.793))
+   push!(bodies, planet("planet_f", 5*3.1264233e-6, 0.03849, 0.01007, 90-89.740))
+   push!(bodies, planet("planet_g", 5*3.9753714e-6, 0.04683, 0.00208, 90-89.742))
+   push!(bodies, planet("planet_h", 5*9.792783e-7, 0.06189, 0.00667, 90-89.805))
 
    numberOfBodies = size(bodies)[1]
 
@@ -274,7 +274,7 @@ for (index, theta) in enumerate(planet_h_thetas)
 end
 
 # plot(sol.t, planet_h_thetas)
-save("planet_h_thetas.jld", "planet_h_thetas", planet_h_thetas)
+save("planet_h_thetas2.jld", "planet_h_thetas2", planet_h_thetas)
 # loaded_data = load("planet_h_thetas.jld")
 # loaded_array = loaded_data["planet_h_thetas"]
 # plot(sol.t, loaded_array)
