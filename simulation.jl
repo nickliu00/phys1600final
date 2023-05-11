@@ -25,8 +25,6 @@ function planet(name="Earth", m=3.0e-6, a=1.0, ϵ=0.017, i=0.0)
    perihelion = (1.0 - ϵ) * a
 	aphelion = (1.0 + ϵ) * a
 	speed = sqrt(G * 0.089 * (1.0 + ϵ)^2 / (a * (1.0 - ϵ^2)))
-   println(speed)
-
    phi = 0.0
 	r = [perihelion * cos(i*pi/180.0) * cos(phi), perihelion * cos(i*pi/180.0) * sin(phi), perihelion * sin(i*pi/180.0)]
 	v = [-speed * sin(phi), speed * cos(phi), 0.0]
@@ -212,17 +210,17 @@ function obliquity(body::Int64, solution)
    return (time, ob)
 end
 
-function SolarSystem()
+function SolarSystem(a_modifier, mass_modifier)
 
    bodies = Vector{body}()
    push!(bodies, star("TRAPPIST-1", 1*0.089, zeros(3), zeros(3)))
-   push!(bodies, planet("planet_b", 5*4.1354313e-6, 0.01154, 0.00622, 90-89.728))
-   push!(bodies, planet("planet_c", 5*3.9354315e-6, 0.01580, 0.00654, 90-89.778))
-   push!(bodies, planet("planet_d", 5*1.1666655e-6, 0.02227, 0.00837, 90-89.896))
-   push!(bodies, planet("planet_e", 5*2.0816796e-6, 0.02925, 0.00510, 90-89.793))
-   push!(bodies, planet("planet_f", 5*3.1264233e-6, 0.03849, 0.01007, 90-89.740))
-   push!(bodies, planet("planet_g", 5*3.9753714e-6, 0.04683, 0.00208, 90-89.742))
-   push!(bodies, planet("planet_h", 5*9.792783e-7, 0.06189, 0.00667, 90-89.805))
+   push!(bodies, planet("planet_b", mass_modifier*4.1354313e-6, 0.01154, 0.00622, 90-89.728))
+   push!(bodies, planet("planet_c", mass_modifier*3.9354315e-6, 0.01580, 0.00654, 90-89.778))
+   push!(bodies, planet("planet_d", mass_modifier*1.1666655e-6, 0.02227, 0.00837, 90-89.896))
+   push!(bodies, planet("planet_e", mass_modifier*2.0816796e-6, 0.02925, 0.00510, 90-89.793))
+   push!(bodies, planet("planet_f", mass_modifier*3.1264233e-6, 0.03849, 0.01007, 90-89.740))
+   push!(bodies, planet("planet_g", mass_modifier*3.9753714e-6, 0.04683, 0.00208, 90-89.742))
+   push!(bodies, planet("planet_h", mass_modifier*9.792783e-7, a_modifier, 0.00667, 90-89.805))
 
    numberOfBodies = size(bodies)[1]
 
@@ -235,73 +233,110 @@ function SolarSystem()
 
 end
 
-s = SolarSystem()
-CenterOfMassFrame!(s)
-println(typeof(s))
-println("Initial total energy = ", TotalEnergy(s))
-println("Initial total linear momentum = ", TotalLinearMomentum(s))
-println("Initial total angular momentum = ", TotalAngularMomentum(s))
-println("Number of bodies = ", s.numberOfBodies)
-for b in s.bodies
-   println("body name = ", b.name)
+for i in 1:2
+   if i == 1
+      a = 0.06189
+   elseif i == 2 
+      a = 0.06199
+   end
+
+   mass_factor = 20
+
+   s = SolarSystem(a, mass_factor)
+   CenterOfMassFrame!(s)
+   println(typeof(s))
+   println("Initial total energy = ", TotalEnergy(s))
+   println("Initial total linear momentum = ", TotalLinearMomentum(s))
+   println("Initial total angular momentum = ", TotalAngularMomentum(s))
+   println("Number of bodies = ", s.numberOfBodies)
+   for b in s.bodies
+      println("body name = ", b.name)
+   end
+
+   t_final = 5.0 # final time of simulation
+   tspan = (0.0, t_final) # span of time to simulate
+   prob = ODEProblem(parallel_tendency!, s.phaseSpace, tspan, s) # specify ODE
+   sol = solve(prob, progress=true, maxiters=1e8, reltol=1e-6, abstol=1e-6) # solve using Tsit5 algorithm to specified accuracy
+   println("\n\t Results")
+   println("Final time  = ", sol.t[end])
+   println("Final total energy = ", TotalEnergy(s))
+   println("Final total linear momentum = ", TotalLinearMomentum(s))
+   println("Final total angular momentum  = ", TotalAngularMomentum(s))
+
+   trappist1 = 1
+   planet_b = 2
+   planet_c = 3
+   planet_d = 4
+   planet_e = 5
+   planet_f = 6
+   planet_g = 7
+   planet_h = 8
+
+   planet_h_thetas = atan.(sol[1, planet_h, :], sol[2, planet_h, :])
+
+   a = sol[1, planet_h, :]
+   b = sol[2, planet_h, :]
+   planet_h_rs = hcat(a, b)
+   planet_h_rs_modified = []
+   for (i,row) in enumerate(eachrow(planet_h_rs))
+      if abs(row[2]) < .01
+         push!(planet_h_rs_modified, row)
+      end
+   end
+
+   planet_h_rs_modified = reshape(planet_h_rs_modified, length(planet_h_rs_modified), 1)
+   planet_h_rs_modified2 = Matrix{Float64}(undef, length(planet_h_rs_modified), 2)
+   for i in 1:length(planet_h_rs_modified)
+      planet_h_rs_modified2[i,:] = planet_h_rs_modified[i]
+   end
+   planet_h_rs = planet_h_rs_modified2
+
+   for (index, theta) in enumerate(planet_h_thetas)
+      if index > 1 && planet_h_thetas[index]-planet_h_thetas[index-1] < 0 
+         planet_h_thetas[index:end].+=2*pi
+      end 
+   end
+
+   # plot(sol.t, planet_h_thetas)
+   if i == 1
+      save("planet_h_thetas.jld", "planet_h_thetas", planet_h_thetas)
+      save("planet_h_rs.jld", "planet_h_rs", planet_h_rs)
+   elseif i == 2
+      save("planet_h_thetas2.jld", "planet_h_thetas2", planet_h_thetas)
+      save("planet_h_rs2.jld", "planet_h_rs2", planet_h_rs)
+   end
+   # loaded_data = load("planet_h_thetas.jld")
+   # loaded_array = loaded_data["planet_h_thetas"]
+   # plot(sol.t, loaded_array)
+
+   # Plot of orbit
+   xy = plot(
+   [(sol[1, trappist1, :], sol[2, trappist1, :]), 
+   (sol[1, planet_b, :], sol[2, planet_b, :]), 
+   (sol[1, planet_c, :], sol[2, planet_c, :]),
+   (sol[1, planet_d, :], sol[2, planet_d, :]), 
+   (sol[1, planet_e, :], sol[2, planet_e, :]),
+   (sol[1, planet_f, :], sol[2, planet_f, :]),
+   (sol[1, planet_g, :], sol[2, planet_g, :]),
+   (sol[1, planet_h, :], sol[2, planet_h, :])],
+   xlabel = "x (AU)", ylabel = "y (AU)", legend = true, title = "TRAPPIST-1 Planetary System", 
+   label = permutedims([body.name for body in s.bodies]), aspect_ratio=1, linewidth=0.5)
+
+   p = plot(xy, xlims=(-0.2, 0.2), ylims=(-0.10, 0.10))
+   display(p)
+
+   # # Plot of obliquity
+   # tilt = obliquity(planet_b, sol)
+   # obliquityPlot = plot(tilt, xlabel = "t", ylabel = "tilt", legend = false, title = "obliquity")
+
+   # # Plot of eccentricity
+   # eccentric = eccentricity(planet_b, sol)
+   # eccentricityPlot = plot(eccentric, xlabel = "t", ylabel = "ϵ", legend = false, title = "eccentricity")
+
+   # plot(obliquityPlot, eccentricityPlot)
+
 end
 
-t_final = 100.0 # final time of simulation
-tspan = (0.0, t_final) # span of time to simulate
-prob = ODEProblem(parallel_tendency!, s.phaseSpace, tspan, s) # specify ODE
-sol = solve(prob, progress=true, maxiters=1e8, reltol=1e-6, abstol=1e-6) # solve using Tsit5 algorithm to specified accuracy
-println("\n\t Results")
-println("Final time  = ", sol.t[end])
-println("Final total energy = ", TotalEnergy(s))
-println("Final total linear momentum = ", TotalLinearMomentum(s))
-println("Final total angular momentum  = ", TotalAngularMomentum(s))
 
-trappist1 = 1
-planet_b = 2
-planet_c = 3
-planet_d = 4
-planet_e = 5
-planet_f = 6
-planet_g = 7
-planet_h = 8
-
-planet_h_thetas = atan.(sol[1, planet_h, :], sol[2, planet_h, :])
-
-for (index, theta) in enumerate(planet_h_thetas)
-   if index > 1 && planet_h_thetas[index]-planet_h_thetas[index-1] < 0 
-      planet_h_thetas[index:end].+=2*pi
-   end 
-end
-
-# plot(sol.t, planet_h_thetas)
-save("planet_h_thetas2.jld", "planet_h_thetas2", planet_h_thetas)
-# loaded_data = load("planet_h_thetas.jld")
-# loaded_array = loaded_data["planet_h_thetas"]
-# plot(sol.t, loaded_array)
-
-# Plot of orbit
-xy = plot(
-[(sol[1, trappist1, :], sol[2, trappist1, :]), 
- (sol[1, planet_b, :], sol[2, planet_b, :]), 
- (sol[1, planet_c, :], sol[2, planet_c, :]),
- (sol[1, planet_d, :], sol[2, planet_d, :]), 
- (sol[1, planet_e, :], sol[2, planet_e, :]),
- (sol[1, planet_f, :], sol[2, planet_f, :]),
- (sol[1, planet_g, :], sol[2, planet_g, :]),
- (sol[1, planet_h, :], sol[2, planet_h, :])],
- xlabel = "x (AU)", ylabel = "y (AU)", legend = true, title = "TRAPPIST-1 Planetary System", 
- label = permutedims([body.name for body in s.bodies]), aspect_ratio=1, linewidth=0.5)
-
-plot(xy, xlims=(-0.2, 0.2), ylims=(-0.10, 0.10))
-
-# # Plot of obliquity
-# tilt = obliquity(planet_b, sol)
-# obliquityPlot = plot(tilt, xlabel = "t", ylabel = "tilt", legend = false, title = "obliquity")
-
-# # Plot of eccentricity
-# eccentric = eccentricity(planet_b, sol)
-# eccentricityPlot = plot(eccentric, xlabel = "t", ylabel = "ϵ", legend = false, title = "eccentricity")
-
-# plot(obliquityPlot, eccentricityPlot)
 
 

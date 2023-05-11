@@ -13,11 +13,13 @@ planet_h_thetas2 = loaded_data2["planet_h_thetas2"]
 
 # plot(planet_h_thetas)
 # plot!(planet_h_thetas2)
-println(size(planet_h_thetas))
-println(size(planet_h_thetas2))
+# println(size(planet_h_thetas))
+# println(size(planet_h_thetas2))
 
-delta_thetas = abs.(planet_h_thetas[1:302044] - planet_h_thetas2[1:302044])
-times = range(1, stop=100, length=302044)
+minsize = min(size(planet_h_thetas)[1], size(planet_h_thetas2)[1])
+
+delta_thetas = abs.(planet_h_thetas[1:minsize] - planet_h_thetas2[1:minsize])
+times = range(1, stop=100, length=minsize)
 
 plot(times, delta_thetas, legend=false, title="Δθ vs. Time for Planet h from Initial Perturbation", xlabel = "Years", ylabel = "Δθ")
 
